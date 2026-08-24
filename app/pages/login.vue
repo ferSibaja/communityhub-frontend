@@ -1,31 +1,38 @@
+<!--
+  Página de inicio de sesión (ruta "/login").
+  Muestra el formulario de login y, tras autenticar, redirige a la ruta
+  solicitada originalmente (query "redirect") o a la página de inicio.
+-->
 <script setup lang="ts">
+import { Eye, EyeOff, ArrowRight } from 'lucide-vue-next';
+
 useHead({ title: 'Iniciar sesión · CommunityHub' });
 
-const email = ref('');
-const password = ref('');
-const showPassword = ref(false);
-const errorMessage = ref('');
+const email = ref(''); // Correo ingresado en el formulario
+const password = ref(''); // Contraseña ingresada en el formulario
+const showPassword = ref(false); // Controla si la contraseña se muestra en texto plano
+const errorMessage = ref(''); // Mensaje de error a mostrar tras un intento fallido de login
 
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
+// Indica si hay una operación de autenticación en curso (deshabilita el formulario).
 const cargando = computed(() => authStore.cargando);
+// Valida que el correo tenga formato válido y la contraseña no esté vacía.
 const isFormValid = computed(() => /\S+@\S+\.\S+/.test(email.value) && password.value.length > 0);
 
+// Textos del panel decorativo de la pantalla de autenticación.
 const headlineLines = ['Tu próxima', 'actividad', 'empieza aquí'];
 const tags = ['Talleres', 'Arte', 'Deportes', 'Networking', 'Voluntariado'];
 
+/** Envía el formulario de login y redirige al usuario tras autenticarse. */
 async function onSubmit() {
   errorMessage.value = '';
   if (!isFormValid.value) return;
 
   try {
     await authStore.login(email.value, password.value);
-    // Si vinimos empujados por un middleware (auth/admin/organizer) con
-    // ?redirect=/ruta-original, volvemos ahí en vez de mandar siempre a "/".
-    // Solo se acepta una ruta interna (empieza con "/", no "//") para evitar
-    // un open-redirect si alguien manipula el query param.
     const redirectParam = route.query.redirect;
     const destino =
       typeof redirectParam === 'string' && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
@@ -61,7 +68,7 @@ async function onSubmit() {
               v-model.trim="email"
               type="email"
               autocomplete="email"
-              placeholder=""
+              placeholder="tu-correo@ejemplo.com"
               :disabled="cargando"
             />
           </div>
@@ -83,7 +90,8 @@ async function onSubmit() {
                 :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
                 @click="showPassword = !showPassword"
               >
-                {{ showPassword ? 'Ocultar' : 'Ver' }}
+                <EyeOff v-if="showPassword" :size="16" :stroke-width="2" />
+                <Eye v-else :size="16" :stroke-width="2" />
               </button>
             </div>
           </div>
@@ -91,7 +99,7 @@ async function onSubmit() {
           <p v-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
 
           <button type="submit" class="submit-btn" :disabled="cargando || !isFormValid">
-            <span v-if="!cargando">Iniciar sesión</span>
+            <span v-if="!cargando">Iniciar sesión <ArrowRight :size="15" :stroke-width="2.2" style="vertical-align: middle; margin-left: 0.3rem;" /></span>
             <span v-else>Entrando…</span>
           </button>
 
